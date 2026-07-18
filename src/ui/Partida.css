@@ -1,0 +1,196 @@
+.partida {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.palco {
+  position: relative;
+  background: var(--arena-bg);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.palco canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hud-placar {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  font: 700 28px var(--mono);
+  color: var(--text-title);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hud-vidas {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 22px;
+  color: var(--player-3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hud-pausa {
+  position: absolute;
+  top: 52px;
+  right: 16px;
+  background: rgba(23, 26, 33, 0.7);
+  border: 1px solid var(--text-secondary);
+  color: var(--text-title);
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.voltar-partida {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(23, 26, 33, 0.7);
+  border: 1px solid var(--text-secondary);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.camera-miniatura {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 120px;
+  height: 90px;
+  border-radius: 4px;
+  border: 1px solid var(--text-secondary);
+  transform: scaleX(-1);
+  object-fit: cover;
+}
+
+.camera-fundo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
+  object-fit: cover;
+}
+
+.pre-jogo-sobreposicao {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 32px;
+  background: rgba(14, 16, 21, 0.72);
+}
+
+.pre-jogo-sobreposicao p {
+  max-width: 420px;
+  color: var(--text);
+}
+
+.pre-jogo-dica {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.pre-jogo-acoes {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pre-jogo-acoes .acao-primaria,
+.pre-jogo-acoes .acao-secundaria {
+  font: inherit;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 10px 22px;
+  cursor: pointer;
+}
+
+.pre-jogo-acoes .acao-primaria {
+  background: var(--action);
+  color: var(--action-text);
+  border: none;
+}
+
+.pre-jogo-acoes .acao-secundaria {
+  background: none;
+  border: 1px solid var(--text-secondary);
+  color: var(--text);
+  font-weight: 400;
+}
+
+.contagem-numero {
+  font: 700 96px var(--mono);
+  color: var(--text-title);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.aviso-pouca-luz {
+  color: var(--player-2);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.aviso-pouca-luz.flutuante {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(23, 26, 33, 0.7);
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+
+.pre-jogo-erro {
+  max-width: 480px;
+  margin: 80px auto 0;
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pre-jogo-erro .pre-jogo-acoes {
+  justify-content: center;
+}
+
+.pill {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-title);
+}
+
+.pill-ok {
+  background: rgba(161, 212, 42, 0.85);
+  color: var(--action-text);
+}
+
+.pill-alerta {
+  background: rgba(226, 75, 74, 0.85);
+}

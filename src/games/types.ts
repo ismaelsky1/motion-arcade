@@ -1,4 +1,5 @@
 import type { ControlState } from '../tracking/tracker'
+import type { AudioManager } from '../core/audio'
 
 export type Modo = 'solo' | 'coop' | 'versus'
 export type TelaDividida = boolean
@@ -16,8 +17,9 @@ export interface GameInitParams {
   jogadores: number
   modo: Modo
   viewports: Viewport[]
-  audio: unknown
+  audio: AudioManager
   pontuar: (jogador: number, valor: number) => void
+  perderVida: (jogador: number) => void
   largura: number
   altura: number
 }
@@ -39,5 +41,6 @@ export interface GameManifest {
   telaDividida: TelaDividida
   testeDeAlcance: TesteDeAlcance
   capacidades: Capacidade[]
+  vidasIniciais?: number
   carregar: () => Promise<{ default: new () => Game }>
 }

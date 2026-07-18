@@ -1,0 +1,56 @@
+.resultado {
+  max-width: 480px;
+  margin: 80px auto 0;
+  padding: 24px;
+  text-align: center;
+}
+
+.resultado-jogo {
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 13px;
+}
+
+.resultado-placar {
+  font: 700 64px var(--mono);
+  color: var(--action);
+  margin: 24px 0 8px;
+}
+
+.resultado-recorde {
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+}
+
+.resultado-recorde.novo {
+  color: var(--action);
+  font-weight: 700;
+}
+
+.resultado-acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acao-primaria,
+.acao-secundaria {
+  font: inherit;
+  border-radius: 4px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.acao-primaria {
+  background: var(--action);
+  color: var(--action-text);
+  border: none;
+  font-weight: 700;
+}
+
+.acao-secundaria {
+  background: none;
+  border: 1px solid var(--text-secondary);
+  color: var(--text);
+}
