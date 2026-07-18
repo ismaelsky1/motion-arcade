@@ -9,12 +9,15 @@ const ROTULO_CAPACIDADE: Record<Capacidade, string> = {
   zonas: 'Movimento',
 }
 
-export default function Biblioteca() {
+export default function Biblioteca({ aoTestarCamera }: { aoTestarCamera: () => void }) {
   return (
     <div className="biblioteca">
       <header className="biblioteca-header">
         <h1>Motion Arcade</h1>
         <p className="subtitulo">Jogos controlados pela câmera, direto no navegador.</p>
+        <button className="link-teste" onClick={aoTestarCamera}>
+          Teste de câmera (Fase 1)
+        </button>
       </header>
 
       <section className="grade">

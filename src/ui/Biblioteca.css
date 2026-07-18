@@ -13,6 +13,17 @@
   margin-top: 8px;
 }
 
+.link-teste {
+  margin-top: 12px;
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+
 .grade {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
