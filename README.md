@@ -14,3 +14,13 @@ React + Vite + TypeScript. O loop de jogo e o rastreamento rodam fora do React (
 npm install
 npm run dev
 ```
+
+## Deploy (Vercel)
+
+Projeto Vite puro, sem rotas — nenhum `vercel.json` é necessário, a Vercel detecta o framework
+automaticamente (`npm run build`, saída em `dist/`). `getUserMedia` exige HTTPS, que a Vercel
+fornece por padrão.
+
+1. Suba o repositório para o GitHub (ou GitLab/Bitbucket).
+2. Em vercel.com → "Add New Project" → importe o repositório.
+3. Deploy automático a cada push na branch principal.

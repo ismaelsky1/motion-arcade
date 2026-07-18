@@ -84,7 +84,7 @@ export default function Partida({
 
   return (
     <div className="partida">
-      <div className="palco" style={{ width: LARGURA, height: ALTURA }}>
+      <div className="palco" style={{ aspectRatio: `${LARGURA} / ${ALTURA}` }}>
         <canvas ref={canvasRef} width={LARGURA} height={ALTURA} />
         <video
           ref={videoRef}

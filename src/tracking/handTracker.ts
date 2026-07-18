@@ -55,11 +55,20 @@ export class HandTracker implements Tracker {
 
   async start(videoElement: HTMLVideoElement) {
     const vision = await FilesetResolver.forVisionTasks(WASM_URL)
-    this.landmarker = await HandLandmarker.createFromOptions(vision, {
-      baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
-      runningMode: 'VIDEO',
-      numHands: 1,
-    })
+    try {
+      this.landmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+        runningMode: 'VIDEO',
+        numHands: 1,
+      })
+    } catch {
+      // Máquinas sem WebGL2/GPU adequada: cai para CPU em vez de travar o carregamento.
+      this.landmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
+        runningMode: 'VIDEO',
+        numHands: 1,
+      })
+    }
     this.video = videoElement
     this.loop()
   }

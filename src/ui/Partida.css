@@ -10,6 +10,23 @@
   border-radius: 4px;
   overflow: hidden;
   margin: 0 auto;
+  width: 100%;
+  max-width: 640px;
+}
+
+@media (max-width: 640px) {
+  .partida {
+    padding: 12px;
+  }
+
+  .contagem-numero {
+    font-size: 64px;
+  }
+
+  .camera-miniatura {
+    width: 84px;
+    height: 63px;
+  }
 }
 
 .palco canvas {
