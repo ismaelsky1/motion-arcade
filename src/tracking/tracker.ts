@@ -17,6 +17,8 @@ export interface ControlState {
 export interface Tracker {
   start(videoElement: HTMLVideoElement): Promise<void>
   stop(): void
+  // Lista bruta de detecções deste frame (0..N, sem identidade de jogador estável).
+  // Um ResolvedorDeZonas (tracking/zonas.ts) converte isso em controles[0..jogadores-1].
   getState(): ControlState[]
 }
 

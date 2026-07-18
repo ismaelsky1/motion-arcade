@@ -7,7 +7,7 @@ export type StatusTracker = 'iniciando' | 'pronto' | 'erro'
 const LIMIAR_POUCA_LUZ = 60 // média 0-255 abaixo disso soa o aviso
 const INTERVALO_LUZ_MS = 1000
 
-export function useTracker(videoRef: RefObject<HTMLVideoElement | null>) {
+export function useTracker(videoRef: RefObject<HTMLVideoElement | null>, ativo: boolean) {
   const trackerRef = useRef<Tracker | null>(null)
   const [status, setStatus] = useState<StatusTracker>('iniciando')
   const [erro, setErro] = useState<string | null>(null)
@@ -15,6 +15,8 @@ export function useTracker(videoRef: RefObject<HTMLVideoElement | null>) {
   const [tentativa, setTentativa] = useState(0)
 
   useEffect(() => {
+    if (!ativo) return
+
     let cancelado = false
     let stream: MediaStream | null = null
 
@@ -54,7 +56,7 @@ export function useTracker(videoRef: RefObject<HTMLVideoElement | null>) {
       trackerRef.current = null
       stream?.getTracks().forEach((faixa) => faixa.stop())
     }
-  }, [videoRef, tentativa])
+  }, [videoRef, tentativa, ativo])
 
   useEffect(() => {
     if (status !== 'pronto') {

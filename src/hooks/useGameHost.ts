@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import { GameHost, type StatusPartida } from '../core/gameHost'
 import type { AudioManager } from '../core/audio'
 import type { Tracker } from '../tracking/tracker'
-import type { Game, GameManifest } from '../games/types'
+import { resolverTelaDividida, type Game, type GameManifest, type Modo } from '../games/types'
 
 const VIDAS_PADRAO = 3
 
@@ -15,11 +15,16 @@ export function useGameHost(
   audio: AudioManager,
   largura: number,
   altura: number,
+  jogadores: number,
+  modo: Modo,
 ) {
   const [jogoInstancia, setJogoInstancia] = useState<Game | null>(null)
   const [status, setStatus] = useState<StatusPartida>('pausado')
-  const [placar, setPlacar] = useState<number[]>([0])
-  const [vidas, setVidas] = useState<number[]>([manifest.vidasIniciais ?? VIDAS_PADRAO])
+  const [placar, setPlacar] = useState<number[]>(() => Array(jogadores).fill(0))
+  const [vidas, setVidas] = useState<number[]>(() =>
+    Array(jogadores).fill(manifest.vidasIniciais ?? VIDAS_PADRAO),
+  )
+  const [jogadoresInativos, setJogadoresInativos] = useState<number[]>([])
   const [terminou, setTerminou] = useState(false)
   const hostRef = useRef<GameHost | null>(null)
 
@@ -41,8 +46,9 @@ export function useGameHost(
       jogoInstancia,
       trackerRef.current,
       {
-        jogadores: 1,
-        modo: 'solo',
+        jogadores,
+        modo,
+        telaDividida: resolverTelaDividida(manifest.telaDividida, modo),
         largura,
         altura,
         vidasIniciais: manifest.vidasIniciais ?? VIDAS_PADRAO,
@@ -51,6 +57,7 @@ export function useGameHost(
         aoMudarStatus: setStatus,
         aoMudarPlacar: setPlacar,
         aoMudarVidas: setVidas,
+        aoMudarJogadoresInativos: setJogadoresInativos,
         aoTerminar: () => setTerminou(true),
       },
       audio,
@@ -62,14 +69,28 @@ export function useGameHost(
       host.destruir()
       hostRef.current = null
     }
-    // largura/altura/manifest/audio são fixos para a tela de Partida; só remonta o host
-    // quando o tracker fica pronto, o jogador confirma o início ou o jogo carregado muda.
-  }, [trackerPronto, podeIniciar, jogoInstancia, canvasRef, trackerRef, largura, altura, manifest, audio])
+    // largura/altura/manifest/audio/jogadores/modo são fixos para a tela de Partida; só
+    // remonta o host quando o tracker fica pronto, o jogador confirma o início ou o jogo
+    // carregado muda.
+  }, [
+    trackerPronto,
+    podeIniciar,
+    jogoInstancia,
+    canvasRef,
+    trackerRef,
+    largura,
+    altura,
+    manifest,
+    audio,
+    jogadores,
+    modo,
+  ])
 
   return {
     status,
     placar,
     vidas,
+    jogadoresInativos,
     terminou,
     pausar: () => hostRef.current?.pausar(),
     retomar: () => hostRef.current?.retomar(),

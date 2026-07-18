@@ -46,6 +46,17 @@
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
+.hud-placar-versus {
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: 700 15px var(--mono);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
 .hud-vidas {
   position: absolute;
   top: 12px;
@@ -53,6 +64,43 @@
   font-size: 22px;
   color: var(--player-3);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hud-vidas-versus {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 15px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hud-zonas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud-zona {
+  position: absolute;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: 700 15px var(--mono);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.hud-zona-placar {
+  font-size: 22px;
+}
+
+.hud-zona-vidas {
+  font-size: 16px;
 }
 
 .hud-pausa {

@@ -8,7 +8,7 @@ const ALTURA = 480
 export default function TesteCamera({ aoVoltar }: { aoVoltar: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { trackerRef, status, erro } = useTracker(videoRef)
+  const { trackerRef, status, erro } = useTracker(videoRef, true)
   const [maoDetectada, setMaoDetectada] = useState(false)
 
   useEffect(() => {

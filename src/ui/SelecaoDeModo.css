@@ -1,0 +1,110 @@
+.selecao-modo {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.voltar {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 0 16px;
+}
+
+.selecao-modo-descricao {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.selecao-bloco {
+  margin-bottom: 28px;
+}
+
+.selecao-bloco h2 {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.opcoes-modo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.opcao-modo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--surface);
+  border-radius: 4px;
+  padding: 14px 16px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.opcao-modo.selecionada {
+  border-color: var(--accent);
+}
+
+.opcao-modo-titulo {
+  font-weight: 700;
+  color: var(--text-title);
+}
+
+.opcao-modo-descricao {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.stepper-jogadores {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.stepper-jogadores button {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid var(--text-secondary);
+  background: none;
+  color: var(--text-title);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.stepper-jogadores button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.stepper-valor {
+  font: 700 24px var(--mono);
+  color: var(--text-title);
+  min-width: 24px;
+  text-align: center;
+}
+
+.selecao-modo-dica {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.selecao-modo .acao-primaria {
+  font: inherit;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 12px 24px;
+  cursor: pointer;
+  background: var(--action);
+  color: var(--action-text);
+  border: none;
+  width: 100%;
+}

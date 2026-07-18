@@ -1,14 +1,14 @@
 import type { Tracker } from '../tracking/tracker'
 import type { Game, Modo, Viewport } from '../games/types'
 import { AudioManager } from './audio'
+import { CORES_JOGADORES } from './jogadores'
 
 export type StatusPartida = 'jogando' | 'pausado'
-
-const CORES_JOGADORES = ['#66c0f4', '#f5a623', '#e24b4a', '#a1d42a']
 
 export interface GameHostOpcoes {
   jogadores: number
   modo: Modo
+  telaDividida: boolean
   largura: number
   altura: number
   vidasIniciais: number
@@ -18,6 +18,7 @@ export interface GameHostEventos {
   aoMudarStatus: (status: StatusPartida) => void
   aoMudarPlacar: (placar: number[]) => void
   aoMudarVidas: (vidas: number[]) => void
+  aoMudarJogadoresInativos: (indices: number[]) => void
   aoTerminar: () => void
 }
 
@@ -32,6 +33,7 @@ export class GameHost {
   private ultimoTempo = 0
   private pausaManual = false
   private statusAnterior: StatusPartida | null = null
+  private jogadoresInativosAnterior: number[] = []
   private terminou = false
   private canvas: HTMLCanvasElement
   private jogo: Game
@@ -59,8 +61,15 @@ export class GameHost {
     this.ctx = ctx
     this.placar = Array(opcoes.jogadores).fill(0)
     this.vidas = Array(opcoes.jogadores).fill(opcoes.vidasIniciais)
-    // Viewport único (arena compartilhada); telaDividida entra na Fase 5.
-    this.viewports = [{ x: 0, y: 0, largura: opcoes.largura, altura: opcoes.altura }]
+    this.viewports =
+      opcoes.telaDividida && opcoes.jogadores > 1
+        ? Array.from({ length: opcoes.jogadores }, (_, i) => ({
+            x: (i * opcoes.largura) / opcoes.jogadores,
+            y: 0,
+            largura: opcoes.largura / opcoes.jogadores,
+            altura: opcoes.altura,
+          }))
+        : [{ x: 0, y: 0, largura: opcoes.largura, altura: opcoes.altura }]
   }
 
   iniciar() {
@@ -118,8 +127,18 @@ export class GameHost {
     this.ultimoTempo = agora
 
     const controles = this.tracker.getState()
-    const algumJogadorAtivo = controles.slice(0, this.opcoes.jogadores).some((c) => c.ativo)
-    const status: StatusPartida = this.pausaManual || !algumJogadorAtivo ? 'pausado' : 'jogando'
+    const jogadoresInativos = controles
+      .slice(0, this.opcoes.jogadores)
+      .reduce<number[]>((acc, c, i) => (c.ativo ? acc : [...acc, i]), [])
+    if (
+      jogadoresInativos.length !== this.jogadoresInativosAnterior.length ||
+      jogadoresInativos.some((v, i) => v !== this.jogadoresInativosAnterior[i])
+    ) {
+      this.jogadoresInativosAnterior = jogadoresInativos
+      this.eventos.aoMudarJogadoresInativos(jogadoresInativos)
+    }
+
+    const status: StatusPartida = this.pausaManual || jogadoresInativos.length > 0 ? 'pausado' : 'jogando'
     if (status !== this.statusAnterior) {
       this.statusAnterior = status
       this.eventos.aoMudarStatus(status)
@@ -130,18 +149,16 @@ export class GameHost {
     }
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-    for (const viewport of this.viewports) {
-      this.jogo.render(this.ctx, viewport)
-    }
+    this.viewports.forEach((viewport, indice) => this.jogo.render(this.ctx, viewport, indice))
     this.desenharCursores(controles)
 
     this.rafId = requestAnimationFrame(this.loop)
   }
 
   private desenharCursores(controles: ReturnType<Tracker['getState']>) {
-    const viewport = this.viewports[0]
     controles.slice(0, this.opcoes.jogadores).forEach((estado, i) => {
       if (!estado.ativo) return
+      const viewport = this.viewports.length > 1 ? this.viewports[i] : this.viewports[0]
       const x = viewport.x + estado.cursor.x * viewport.largura
       const y = viewport.y + estado.cursor.y * viewport.altura
       const cor = CORES_JOGADORES[i % CORES_JOGADORES.length]
