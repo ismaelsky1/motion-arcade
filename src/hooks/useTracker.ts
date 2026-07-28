@@ -1,13 +1,29 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { HandTracker } from '../tracking/handTracker'
 import type { Tracker } from '../tracking/tracker'
+import type { Capacidade } from '../games/types'
 
 export type StatusTracker = 'iniciando' | 'pronto' | 'erro'
 
 const LIMIAR_POUCA_LUZ = 60 // média 0-255 abaixo disso soa o aviso
 const INTERVALO_LUZ_MS = 1000
 
-export function useTracker(videoRef: RefObject<HTMLVideoElement | null>, ativo: boolean) {
+// Resolvedor de capacidades minimalista: só 2 rastreadores existem hoje, então é um if/else
+// em vez de um registro genérico. O import do PoseTracker é dinâmico pra não puxar
+// @tensorflow/tfjs (dependência pesada) pra sessões que só jogam com as mãos.
+async function criarTracker(capacidades: Capacidade[]): Promise<Tracker> {
+  if (capacidades.includes('pose')) {
+    const { PoseTracker } = await import('../tracking/poseTracker')
+    return new PoseTracker()
+  }
+  return new HandTracker()
+}
+
+export function useTracker(
+  videoRef: RefObject<HTMLVideoElement | null>,
+  ativo: boolean,
+  capacidades: Capacidade[],
+) {
   const trackerRef = useRef<Tracker | null>(null)
   const [status, setStatus] = useState<StatusTracker>('iniciando')
   const [erro, setErro] = useState<string | null>(null)
@@ -32,7 +48,7 @@ export function useTracker(videoRef: RefObject<HTMLVideoElement | null>, ativo: 
         video.srcObject = stream
         await video.play()
 
-        const tracker = new HandTracker()
+        const tracker = await criarTracker(capacidades)
         await tracker.start(video)
         if (cancelado) {
           tracker.stop()
@@ -56,7 +72,7 @@ export function useTracker(videoRef: RefObject<HTMLVideoElement | null>, ativo: 
       trackerRef.current = null
       stream?.getTracks().forEach((faixa) => faixa.stop())
     }
-  }, [videoRef, tentativa, ativo])
+  }, [videoRef, tentativa, ativo, capacidades])
 
   useEffect(() => {
     if (status !== 'pronto') {

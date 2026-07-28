@@ -8,6 +8,7 @@ import Partida from './ui/Partida'
 import Resultado from './ui/Resultado'
 import { useTracker } from './hooks/useTracker'
 import { ResolvedorDeZonas } from './tracking/zonas'
+import type { Tracker } from './tracking/tracker'
 import type { GameManifest, Modo } from './games/types'
 import './ui/Partida.css'
 
@@ -31,23 +32,28 @@ function App() {
   const [jogadoresAlvo, setJogadoresAlvo] = useState(1)
   const [jogadoresConfirmados, setJogadoresConfirmados] = useState(1)
   const [placarFinal, setPlacarFinal] = useState<number[]>([])
+  const [vidasFinais, setVidasFinais] = useState<number[]>([])
   const [precisaNovoResolvedor, setPrecisaNovoResolvedor] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
-  const resolvedorRef = useRef<ResolvedorDeZonas | null>(null)
+  const resolvedorRef = useRef<Tracker | null>(null)
 
   const cameraAtiva = TELAS_COM_CAMERA.includes(tela)
+  const usaZonas = !jogoAtual?.capacidades.includes('pose')
   const { trackerRef, status: statusCamera, erro, poucaLuz, tentarNovamente } = useTracker(
     videoRef,
     cameraAtiva,
+    jogoAtual?.capacidades ?? [],
   )
 
   useEffect(() => {
     if (precisaNovoResolvedor && statusCamera === 'pronto' && trackerRef.current) {
-      resolvedorRef.current = new ResolvedorDeZonas(trackerRef.current, jogadoresAlvo)
+      resolvedorRef.current = usaZonas
+        ? new ResolvedorDeZonas(trackerRef.current, jogadoresAlvo)
+        : trackerRef.current
       setPrecisaNovoResolvedor(false)
     }
-  }, [precisaNovoResolvedor, statusCamera, jogadoresAlvo, trackerRef])
+  }, [precisaNovoResolvedor, statusCamera, jogadoresAlvo, trackerRef, usaZonas])
 
   function voltarBiblioteca() {
     resolvedorRef.current = null
@@ -69,10 +75,12 @@ function App() {
 
   function aoConfirmarLobby(jogadoresProntos: number) {
     if (trackerRef.current) {
-      resolvedorRef.current = new ResolvedorDeZonas(trackerRef.current, jogadoresProntos)
+      resolvedorRef.current = usaZonas
+        ? new ResolvedorDeZonas(trackerRef.current, jogadoresProntos)
+        : trackerRef.current
     }
     setJogadoresConfirmados(jogadoresProntos)
-    setTela('testeDeAlcance')
+    setTela(jogoAtual?.testeDeAlcance === 'inaplicavel' ? 'partida' : 'testeDeAlcance')
   }
 
   function voltarParaLobbyPorAusencia() {
@@ -151,7 +159,7 @@ function App() {
             <TesteDeAlcance
               manifest={jogoAtual}
               jogadores={jogadoresConfirmados}
-              resolvedor={resolvedorRef.current}
+              resolvedor={resolvedorRef.current as ResolvedorDeZonas}
               aoConcluir={() => setTela('partida')}
               aoJogadorSumiu={voltarParaLobbyPorAusencia}
             />
@@ -165,8 +173,9 @@ function App() {
               videoRef={videoRef}
               trackerRef={resolvedorRef}
               poucaLuz={poucaLuz}
-              aoTerminar={(placar) => {
+              aoTerminar={(placar, vidas) => {
                 setPlacarFinal(placar)
+                setVidasFinais(vidas)
                 setTela('resultado')
               }}
               aoVoltar={voltarBiblioteca}
@@ -184,6 +193,7 @@ function App() {
         manifest={jogoAtual}
         modo={modo}
         placar={placarFinal}
+        vidas={vidasFinais}
         aoJogarDeNovo={() => {
           setPrecisaNovoResolvedor(true)
           setTela('lobby')

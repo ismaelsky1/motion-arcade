@@ -52,6 +52,7 @@ export function useGameHost(
         largura,
         altura,
         vidasIniciais: manifest.vidasIniciais ?? VIDAS_PADRAO,
+        mostrarCursorPadrao: !manifest.capacidades.includes('pose'),
       },
       {
         aoMudarStatus: setStatus,

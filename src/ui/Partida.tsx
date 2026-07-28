@@ -30,7 +30,7 @@ export default function Partida({
   videoRef: RefObject<HTMLVideoElement | null>
   trackerRef: RefObject<Tracker | null>
   poucaLuz: boolean
-  aoTerminar: (placar: number[]) => void
+  aoTerminar: (placar: number[], vidas: number[]) => void
   aoVoltar: () => void
   aoJogadorSumiu: () => void
 }) {
@@ -56,8 +56,8 @@ export default function Partida({
   )
 
   useEffect(() => {
-    if (terminou) aoTerminar(placar)
-  }, [terminou, placar, aoTerminar])
+    if (terminou) aoTerminar(placar, vidas)
+  }, [terminou, placar, vidas, aoTerminar])
 
   useEffect(() => {
     audioRef.current?.inicio()
@@ -167,7 +167,9 @@ export default function Partida({
               ? 'Jogando'
               : jogadoresInativos.length > 0 && jogadores > 1
                 ? jogadoresInativos.map((i) => nomeDoJogador(i)).join(', ') + ' saiu do quadro'
-                : 'Mostre sua mão'}
+                : manifest.capacidades.includes('pose')
+                  ? 'Mostre-se para a câmera'
+                  : 'Mostre sua mão'}
           </div>
         </>
       )}

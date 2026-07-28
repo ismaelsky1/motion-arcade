@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ResolvedorDeZonas } from '../tracking/zonas'
+import type { Tracker } from '../tracking/tracker'
+import { bboxDeKeypoints } from '../tracking/poseUtils'
 import { criarHoverPress, type HoverPress } from '../hooks/useHoverPress'
 import { corDoJogador, nomeDoJogador } from '../core/jogadores'
 import type { GameManifest } from '../games/types'
@@ -29,10 +30,11 @@ export default function Lobby({
 }: {
   manifest: GameManifest
   jogadoresAlvo: number
-  resolvedor: ResolvedorDeZonas
+  resolvedor: Tracker
   aoConfirmar: (jogadoresProntos: number) => void
   aoVoltar: () => void
 }) {
+  const usaPose = manifest.capacidades.includes('pose')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const faixasRef = useRef<Faixa[]>(
     Array.from({ length: jogadoresAlvo }, () => ({
@@ -99,7 +101,9 @@ export default function Lobby({
           }
         }
 
-        const globalX = i * larguraFaixa + controle.cursor.x * larguraFaixa
+        // Em jogos de pose o cursor já é global ao quadro (centro do bbox do corpo); em jogos
+        // de zona ele é local à própria faixa (ResolvedorDeZonas renormaliza).
+        const globalX = usaPose ? controle.cursor.x * LARGURA : i * larguraFaixa + controle.cursor.x * larguraFaixa
         const globalY = controle.cursor.y * ALTURA
         if (
           globalX >= botaoRect.x &&
@@ -125,14 +129,14 @@ export default function Lobby({
         return
       }
 
-      desenharCanvas(canvasRef.current, faixas, controles, jogadoresAlvo, botaoRect, resultadoBotao.progresso, habilitado)
+      desenharCanvas(canvasRef.current, faixas, controles, jogadoresAlvo, botaoRect, resultadoBotao.progresso, habilitado, usaPose)
       rafId = requestAnimationFrame(desenhar)
     }
 
     rafId = requestAnimationFrame(desenhar)
     return () => cancelAnimationFrame(rafId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedor, jogadoresAlvo, minimo])
+  }, [resolvedor, jogadoresAlvo, minimo, usaPose])
 
   return (
     <>
@@ -143,7 +147,9 @@ export default function Lobby({
       </button>
 
       <div className="lobby-dica">
-        Acene para uma faixa ficar com você. Feche a mão ou fique parado 2s para confirmar.
+        {usaPose
+          ? 'Fique visível para a câmera. Fique parado 2s para confirmar.'
+          : 'Acene para uma faixa ficar com você. Feche a mão ou fique parado 2s para confirmar.'}
       </div>
 
       <div className={`lobby-botao-info ${progressoBotao > 0 ? 'ativo' : ''}`}>
@@ -157,11 +163,12 @@ export default function Lobby({
 function desenharCanvas(
   canvas: HTMLCanvasElement | null,
   faixas: Faixa[],
-  controles: ReturnType<ResolvedorDeZonas['getState']>,
+  controles: ReturnType<Tracker['getState']>,
   jogadores: number,
   botaoRect: { x: number; y: number; largura: number; altura: number },
   progressoBotao: number,
   botaoHabilitado: boolean,
+  usaPose: boolean,
 ) {
   const ctx = canvas?.getContext('2d')
   if (!canvas || !ctx) return
@@ -170,38 +177,46 @@ function desenharCanvas(
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   faixas.forEach((faixa, i) => {
-    const x = i * larguraFaixa
     const cor = corDoJogador(i)
+    const controle = controles[i]
+
+    // Caixa: posição real do corpo (pose, sem faixas) ou faixa vertical fixa (mão, com zonas).
+    const caixa = usaPose
+      ? caixaDaPose(controle, canvas.width, canvas.height)
+      : { x: i * larguraFaixa + 6, y: 6, largura: larguraFaixa - 12, altura: canvas.height - 12 }
+    if (!caixa) return
 
     ctx.save()
     ctx.strokeStyle = faixa.estado === 'livre' ? 'rgba(199, 213, 224, 0.35)' : cor
     ctx.lineWidth = faixa.estado === 'pronta' ? 4 : 2
     ctx.setLineDash(faixa.estado === 'pronta' ? [] : [8, 8])
-    ctx.strokeRect(x + 6, 6, larguraFaixa - 12, canvas.height - 12)
+    ctx.strokeRect(caixa.x, caixa.y, caixa.largura, caixa.altura)
 
     if (faixa.estado === 'pronta') {
       ctx.globalAlpha = 0.12
       ctx.fillStyle = cor
-      ctx.fillRect(x + 6, 6, larguraFaixa - 12, canvas.height - 12)
+      ctx.fillRect(caixa.x, caixa.y, caixa.largura, caixa.altura)
       ctx.globalAlpha = 1
     }
+
+    const centroX = caixa.x + caixa.largura / 2
+    const rotuloY = usaPose ? Math.max(caixa.y - 14, 16) : 30
 
     ctx.fillStyle = faixa.estado === 'livre' ? 'rgba(199, 213, 224, 0.6)' : cor
     ctx.font = '700 16px Inter, sans-serif'
     ctx.textAlign = 'center'
-    ctx.fillText(nomeDoJogador(i), x + larguraFaixa / 2, 30)
+    ctx.fillText(nomeDoJogador(i), centroX, rotuloY)
 
     const rotulo = faixa.estado === 'pronta' ? 'Pronto ✓' : faixa.estado === 'detectada' ? 'Confirmando…' : 'Livre'
     ctx.font = '400 13px Inter, sans-serif'
-    ctx.fillText(rotulo, x + larguraFaixa / 2, 50)
+    ctx.fillText(rotulo, centroX, rotuloY + 20)
 
     if (faixa.estado === 'detectada' && faixa.progressoHover > 0) {
-      desenharAnelProgresso(ctx, x + larguraFaixa / 2, canvas.height / 2, 30, faixa.progressoHover, cor)
+      desenharAnelProgresso(ctx, centroX, caixa.y + caixa.altura / 2, 30, faixa.progressoHover, cor)
     }
 
-    const controle = controles[i]
-    if (controle?.ativo) {
-      const cx = x + controle.cursor.x * larguraFaixa
+    if (!usaPose && controle?.ativo) {
+      const cx = i * larguraFaixa + controle.cursor.x * larguraFaixa
       const cy = controle.cursor.y * canvas.height
       ctx.beginPath()
       ctx.arc(cx, cy, controle.gestures.pinch ? 12 : 16, 0, Math.PI * 2)
@@ -223,6 +238,22 @@ function desenharCanvas(
     ctx.fillRect(botaoRect.x, botaoRect.y, botaoRect.largura * progressoBotao, botaoRect.altura)
   }
   ctx.restore()
+}
+
+function caixaDaPose(
+  controle: ReturnType<Tracker['getState']>[number] | undefined,
+  larguraCanvas: number,
+  alturaCanvas: number,
+): { x: number; y: number; largura: number; altura: number } | null {
+  if (!controle?.ativo) return null
+  const bbox = bboxDeKeypoints(controle.points)
+  if (!bbox) return null
+  return {
+    x: bbox.x * larguraCanvas,
+    y: bbox.y * alturaCanvas,
+    largura: bbox.largura * larguraCanvas,
+    altura: bbox.altura * alturaCanvas,
+  }
 }
 
 function desenharAnelProgresso(

@@ -12,6 +12,7 @@ export interface GameHostOpcoes {
   largura: number
   altura: number
   vidasIniciais: number
+  mostrarCursorPadrao?: boolean
 }
 
 export interface GameHostEventos {
@@ -82,6 +83,7 @@ export class GameHost {
       perderVida: this.perderVida,
       largura: this.opcoes.largura,
       altura: this.opcoes.altura,
+      vidasIniciais: this.opcoes.vidasIniciais,
     })
     this.ultimoTempo = performance.now()
     this.rafId = requestAnimationFrame(this.loop)
@@ -150,7 +152,7 @@ export class GameHost {
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     this.viewports.forEach((viewport, indice) => this.jogo.render(this.ctx, viewport, indice))
-    this.desenharCursores(controles)
+    if (this.opcoes.mostrarCursorPadrao !== false) this.desenharCursores(controles)
 
     this.rafId = requestAnimationFrame(this.loop)
   }
