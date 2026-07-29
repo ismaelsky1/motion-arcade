@@ -10,6 +10,7 @@ const LARGURA = 640
 const ALTURA = 480
 const DURACAO_PRONTO_MS = 2000
 const DURACAO_BOTAO_MS = 2000
+const DURACAO_AUTO_INICIO_MS = 3000
 const TEMPO_AUSENCIA_MS = 5000
 
 type EstadoFaixa = 'livre' | 'detectada' | 'pronta'
@@ -45,8 +46,13 @@ export default function Lobby({
     })),
   )
   const botaoHoverRef = useRef<HoverPress>(criarHoverPress(DURACAO_BOTAO_MS))
+  // Jogos de pose não têm um "cursor" natural pra apontar pro botão Começar, então em vez de
+  // hover no botão a partida começa sozinha depois de alguns segundos com o mínimo de
+  // jogadores prontos — ver DURACAO_AUTO_INICIO_MS.
+  const autoInicioRef = useRef<HoverPress>(criarHoverPress(DURACAO_AUTO_INICIO_MS))
   const [prontos, setProntos] = useState(0)
   const [progressoBotao, setProgressoBotao] = useState(0)
+  const [contagemAutoInicio, setContagemAutoInicio] = useState<number | null>(null)
 
   const minimo = manifest.jogadores.min
 
@@ -54,6 +60,7 @@ export default function Lobby({
     let rafId: number
     let ultimoTempo = performance.now()
     let ultimoProntos = -1
+    let ultimaContagem: number | null = -1
 
     function desenhar(agora: number) {
       const dt = Math.min((agora - ultimoTempo) / 1000, 0.1)
@@ -101,17 +108,18 @@ export default function Lobby({
           }
         }
 
-        // Em jogos de pose o cursor já é global ao quadro (centro do bbox do corpo); em jogos
-        // de zona ele é local à própria faixa (ResolvedorDeZonas renormaliza).
-        const globalX = usaPose ? controle.cursor.x * LARGURA : i * larguraFaixa + controle.cursor.x * larguraFaixa
-        const globalY = controle.cursor.y * ALTURA
-        if (
-          globalX >= botaoRect.x &&
-          globalX <= botaoRect.x + botaoRect.largura &&
-          globalY >= botaoRect.y &&
-          globalY <= botaoRect.y + botaoRect.altura
-        ) {
-          algumDentroDoBotao = true
+        // Jogos de pose não têm botão pra apontar (auto-início por tempo, ver abaixo).
+        if (!usaPose) {
+          const globalX = i * larguraFaixa + controle.cursor.x * larguraFaixa
+          const globalY = controle.cursor.y * ALTURA
+          if (
+            globalX >= botaoRect.x &&
+            globalX <= botaoRect.x + botaoRect.largura &&
+            globalY >= botaoRect.y &&
+            globalY <= botaoRect.y + botaoRect.altura
+          ) {
+            algumDentroDoBotao = true
+          }
         }
       })
 
@@ -122,14 +130,31 @@ export default function Lobby({
       }
 
       const habilitado = totalProntos >= minimo
-      const resultadoBotao = botaoHoverRef.current.atualizar(algumDentroDoBotao && habilitado, dt)
-      setProgressoBotao(resultadoBotao.progresso)
-      if (resultadoBotao.completou) {
-        aoConfirmar(totalProntos)
-        return
+
+      if (usaPose) {
+        const resultadoAuto = autoInicioRef.current.atualizar(habilitado, dt)
+        if (resultadoAuto.completou) {
+          aoConfirmar(totalProntos)
+          return
+        }
+        const segundosRestantes = habilitado
+          ? Math.max(1, Math.ceil((1 - resultadoAuto.progresso) * (DURACAO_AUTO_INICIO_MS / 1000)))
+          : null
+        if (segundosRestantes !== ultimaContagem) {
+          ultimaContagem = segundosRestantes
+          setContagemAutoInicio(segundosRestantes)
+        }
+        desenharCanvas(canvasRef.current, faixas, controles, jogadoresAlvo, botaoRect, 0, habilitado, usaPose)
+      } else {
+        const resultadoBotao = botaoHoverRef.current.atualizar(algumDentroDoBotao && habilitado, dt)
+        setProgressoBotao(resultadoBotao.progresso)
+        if (resultadoBotao.completou) {
+          aoConfirmar(totalProntos)
+          return
+        }
+        desenharCanvas(canvasRef.current, faixas, controles, jogadoresAlvo, botaoRect, resultadoBotao.progresso, habilitado, usaPose)
       }
 
-      desenharCanvas(canvasRef.current, faixas, controles, jogadoresAlvo, botaoRect, resultadoBotao.progresso, habilitado, usaPose)
       rafId = requestAnimationFrame(desenhar)
     }
 
@@ -148,14 +173,27 @@ export default function Lobby({
 
       <div className="lobby-dica">
         {usaPose
-          ? 'Fique visível para a câmera. Fique parado 2s para confirmar.'
+          ? 'Fique visível para a câmera. Fique parado 2s para confirmar — a partida começa sozinha.'
           : 'Acene para uma faixa ficar com você. Feche a mão ou fique parado 2s para confirmar.'}
       </div>
 
-      <div className={`lobby-botao-info ${progressoBotao > 0 ? 'ativo' : ''}`}>
-        Começar com {prontos} jogador{prontos === 1 ? '' : 'es'}
-        {prontos < minimo && <span> (mínimo {minimo})</span>}
-      </div>
+      {usaPose ? (
+        contagemAutoInicio !== null ? (
+          <div className="pre-jogo-sobreposicao">
+            <p className="contagem-numero">{contagemAutoInicio}</p>
+          </div>
+        ) : (
+          <div className="lobby-botao-info">
+            {prontos} jogador{prontos === 1 ? '' : 'es'} pronto{prontos === 1 ? '' : 's'}
+            {prontos < minimo && <span> (mínimo {minimo})</span>}
+          </div>
+        )
+      ) : (
+        <div className={`lobby-botao-info ${progressoBotao > 0 ? 'ativo' : ''}`}>
+          Começar com {prontos} jogador{prontos === 1 ? '' : 'es'}
+          {prontos < minimo && <span> (mínimo {minimo})</span>}
+        </div>
+      )}
     </>
   )
 }
@@ -230,14 +268,16 @@ function desenharCanvas(
     ctx.restore()
   })
 
-  ctx.save()
-  ctx.fillStyle = botaoHabilitado ? 'rgba(161, 212, 42, 0.85)' : 'rgba(139, 160, 180, 0.4)'
-  ctx.fillRect(botaoRect.x, botaoRect.y, botaoRect.largura, botaoRect.altura)
-  if (progressoBotao > 0) {
-    ctx.fillStyle = 'rgba(23, 26, 33, 0.35)'
-    ctx.fillRect(botaoRect.x, botaoRect.y, botaoRect.largura * progressoBotao, botaoRect.altura)
+  if (!usaPose) {
+    ctx.save()
+    ctx.fillStyle = botaoHabilitado ? 'rgba(161, 212, 42, 0.85)' : 'rgba(139, 160, 180, 0.4)'
+    ctx.fillRect(botaoRect.x, botaoRect.y, botaoRect.largura, botaoRect.altura)
+    if (progressoBotao > 0) {
+      ctx.fillStyle = 'rgba(23, 26, 33, 0.35)'
+      ctx.fillRect(botaoRect.x, botaoRect.y, botaoRect.largura * progressoBotao, botaoRect.altura)
+    }
+    ctx.restore()
   }
-  ctx.restore()
 }
 
 function caixaDaPose(
