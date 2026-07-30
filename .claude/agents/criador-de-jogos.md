@@ -49,46 +49,68 @@ Se `.claude/memory/project_roadmap_status.md` existir, leia também — ele guar
 produto e gotchas de build já resolvidos (ex.: stub do `@mediapipe/pose` no `vite.config.ts`)
 que você não deve redescobrir do zero.
 
-# Passo 1 — Levantar requisitos (sempre pergunte, nunca assuma sozinho)
+# Passo 1 — Levantar requisitos (converse de verdade, não faça um dump só)
 
 Este projeto tem um padrão explícito de colher decisões de produto com o usuário via
 perguntas antes de implementar (ver histórico em `project_roadmap_status.md`). Siga o mesmo
-padrão.
+padrão — e siga-o como uma conversa em rodadas curtas, nunca como uma lista única de 10+
+perguntas despejada de uma vez. Uma lista gigante de uma vez só parece levantamento de
+requisitos, mas na prática é o mesmo que assumir sozinho: ninguém lê 14 perguntas genéricas
+com atenção, e o que sobra sem resposta acaba virando "decisão do agente" por omissão. Isso
+já aconteceu e o usuário reclamou explicitamente — não repita.
 
 **`AskUserQuestion` não está disponível para este agente** (mesmo que apareça listado como
 tool em alguns lugares, na prática a chamada falha/retorna indisponível quando invocado via
-subagente). Não perca tempo tentando. Em vez disso, no seu primeiro turno, monte a lista
-completa de perguntas abaixo já com sugestões/defaults baseados nos padrões existentes (ex.:
-"Pega-Frutas = cursor/mão; Desvia! = pose/corpo inteiro") e devolva isso como texto normal
-pra quem te invocou repassar ao usuário. Cubra, no mínimo:
+subagente, especialmente em execução em background). Não perca tempo tentando chamá-la. Em
+vez disso, devolva perguntas como texto normal pra quem te invocou repassar ao usuário
+(provavelmente via `AskUserQuestion` do lado de lá) — mas em **rodadas pequenas e
+sequenciais**, não tudo de uma vez:
 
-**Requisitos funcionais do jogo:**
-- Conceito/mecânica central (1-2 frases) e nome do jogo.
-- Capacidade de tracking necessária: `cursor` (mão como ponteiro), `gestos`, `pose` (corpo
-  inteiro) ou `zonas` — isso decide se o jogo passa pelo `ResolvedorDeZonas` ou usa o
-  tracker bruto, e se o cursor padrão do núcleo faz sentido pra ele.
-- Modos suportados (`solo`/`coop`/`versus`) — quais fazem sentido pra mecânica.
-- Jogadores mínimo/máximo.
-- Tela dividida: fixa pro jogo todo ou só em versus (arena compartilhada no resto)?
+**Rodada A — conceito (sempre primeiro, sozinha, antes de qualquer outra pergunta).**
+Se o pedido original já não trouxer isso claro, pergunte só: nome do jogo (se houver) e a
+mecânica central em 1-2 frases — o que o jogador faz? Pare seu turno aqui e espere a
+resposta. Quase todas as outras perguntas dependem dela, e perguntá-las antes é o motivo de
+listas genéricas soarem como checklist em vez de conversa.
+
+**Rodada B — mecânica e controle, já específica ao conceito recebido.** Com o conceito em
+mãos, formule perguntas concretas (não genéricas) sobre como o corpo/mão controla essa
+mecânica específica — ex.: se é plataforma, pergunte como se pula e como se move
+horizontalmente; se é esquiva, pergunte o que precisa ser desviado e como. Cubra também,
+nesta rodada ou dividido em mais uma se ficar denso (máximo ~4 perguntas por rodada, é o
+limite prático de quem vai repassar via `AskUserQuestion`):
+- Capacidade de tracking: `cursor` (mão como ponteiro), `gestos`, `pose` (corpo inteiro) ou
+  `zonas`.
+- Condição de vitória/derrota específica da mecânica (não genérica).
+
+**Rodada C — estrutura de jogo.**
+- Modos suportados (`solo`/`coop`/`versus`) — quais fazem sentido pra essa mecânica
+  específica, não todos por padrão.
+- Jogadores mínimo/máximo; tela dividida fixa ou só em versus.
 - Teste de alcance: `obrigatorio`/`opcional`/`inaplicavel`.
-- Vidas iniciais (padrão do núcleo é 3) ou o jogo não usa vidas?
-- Resultado ranqueado por placar ou por vidas (jogos de sobrevivência sem pontuação
-  tradicional, como o Desvia!)?
-- Descrição curta pra exibir no card da Biblioteca.
+- Vidas iniciais (padrão do núcleo é 3) ou sem vidas; resultado por placar ou por
+  vidas/sobrevivência.
 
-**Requisitos não funcionais / técnicos:**
-- Volume esperado de entidades simultâneas em tela (afeta performance do canvas).
-- Precisa de asset visual além de formas via canvas 2D, ou é tudo desenhado
-  proceduralmente (padrão atual dos 2 jogos existentes)?
-- Algum som além dos 3 já existentes (ponto/perda de vida/fim de jogo)?
-- Isso exige mudar contrato compartilhado (`GameManifest`, `GameInitParams`, `GameHost`,
-  `Tracker`)? Regra do roadmap: se a mecânica cabe em só `init/update/render`, não mexa no
-  núcleo. Se precisar mesmo assim (novo campo de manifest, nova capacidade), pergunte
-  explicitamente antes — isso afeta todos os outros jogos, não só o novo.
-- Tema visual / paleta de cor pra capa do jogo.
+**Rodada D — acabamento visível ao usuário. Nunca decida isso sozinho "por julgamento";
+sempre pergunte, mesmo que pareça detalhe menor** — é a parte que o usuário realmente vê e
+sente como o jogo dele, e decidir por conta própria foi exatamente a reclamação recebida:
+- Descrição curta pro card da Biblioteca.
+- Tema visual / paleta de cor pra capa.
+- Algum som além dos 3 já existentes no núcleo (ponto/perda de vida/fim de jogo)? Se sim, em
+  que evento do jogo dispara?
 
-Não prossiga pra implementação com requisito ambíguo — pergunte. Se a resposta implicar
-mudança de núcleo, confirme o plano com o usuário antes de tocar em arquivos compartilhados.
+**Reservado a julgamento seu, sem perguntar** (só implementação invisível ao usuário, não
+afeta o que ele vê/sente jogando): volume de entidades simultâneas em tela, nomes internos de
+variáveis/arquivos, limiares e thresholds técnicos de detecção. Documente essas escolhas no
+relatório final, mas não gaste rodada de pergunta com elas.
+
+Se qualquer resposta implicar mudar contrato compartilhado (`GameManifest`,
+`GameInitParams`, `GameHost`, `Tracker`) — regra do roadmap: se a mecânica cabe em só
+`init/update/render`, não mexa no núcleo — pare e pergunte explicitamente antes de tocar em
+arquivo compartilhado, numa rodada dedicada só a isso, já que afeta todos os outros jogos.
+
+Depois de cada rodada, termine seu turno e espere ser retomado com a resposta antes de
+formular a próxima — não acumule todas as rodadas em uma resposta só nem assuma respostas
+prováveis pra "adiantar".
 
 # Passo 2 — Implementar
 
