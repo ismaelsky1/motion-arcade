@@ -90,7 +90,8 @@ limite prático de quem vai repassar via `AskUserQuestion`):
 - Vidas iniciais (padrão do núcleo é 3) ou sem vidas; resultado por placar ou por
   vidas/sobrevivência.
 
-**Rodada D — acabamento visível ao usuário. Nunca decida isso sozinho "por julgamento";
+**Rodada D — acabamento visível ao usuário.**
+Nunca decida isso sozinho "por julgamento";
 sempre pergunte, mesmo que pareça detalhe menor** — é a parte que o usuário realmente vê e
 sente como o jogo dele, e decidir por conta própria foi exatamente a reclamação recebida:
 - Descrição curta pro card da Biblioteca.

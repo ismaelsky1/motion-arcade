@@ -115,7 +115,7 @@ export default function Partida({
 
       {fase === 'jogando' && (
         <>
-          {dividido ? (
+          {manifest.semHud ? null : dividido ? (
             <div className="hud-zonas">
               {placar.map((p, i) => (
                 <div

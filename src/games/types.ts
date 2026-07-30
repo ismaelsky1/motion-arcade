@@ -61,5 +61,8 @@ export interface GameManifest {
   capacidades: Capacidade[]
   vidasIniciais?: number
   resultadoPor?: ResultadoPor | Partial<Record<Modo, ResultadoPor>>
+  // Esconde placar e vidas do HUD da Partida — pra experiências sem pontuação nem vidas
+  // (ex.: espelho de movimento). Pausa, sair, aviso de luz e status continuam visíveis.
+  semHud?: boolean
   carregar: () => Promise<{ default: new () => Game }>
 }
